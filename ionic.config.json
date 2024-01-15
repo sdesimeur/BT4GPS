@@ -1,0 +1,7 @@
+{
+  "name": "BT4GPS",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
