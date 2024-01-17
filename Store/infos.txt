@@ -1,0 +1,57 @@
+Raw advertisement packet
+0x02011A020A0C0BFF4C001006281E914703EA14
+FF4C000100000000000000000000000000400000
+0000000000000000000000000000000000000000
+00000
+
+
+#### Properties:
+Service UUID 0000180f-0000-1000-8000-00805f9b34fb
+
+Characteristic UUID 00002a19-0000-1000-8000-00805f9b34fb
+Characteristic Name: Battery Level
+Readable+notifications/indications
+Descriptors:
+Client Characteristic Configuration: 00002902-0000-1000-8000-00805f9b34fb
+
+
+
+
+
+
+#######################################################
+
+#### Properties:
+Service UUID 00001819-0000-1000-8000-00805f9b34fb
+
+Characteristic UUID 00002a6a-0000-1000-8000-00805f9b34fb
+Characteristic Name: LN Feature
+Readable
+Datas: 5D 00 00 00 
+Descriptors:
+no descriptor
+
+#### Properties:
+Service UUID 00001819-0000-1000-8000-00805f9b34fb
+
+Characteristic UUID 00002a67-0000-1000-8000-00805f9b34fb
+Characteristic Name: Locationm and Speed Characteristic
+Supports notifications/indications
+Datas: DD 10 00 00 78 3E 5E 27 EA D5 AA 0A 2A A7 00 22 4C E8 07 01
+Descriptors:
+Client Characteristic Configuration: 00002902-0000-1000-8000-00805f9b34fb
+
+#### Properties:
+Service UUID 00001819-0000-1000-8000-00805f9b34fb
+
+Characteristic UUID 00002a68-0000-1000-8000-00805f9b34fb
+Characteristic Name: Navigation
+Supports notifications/indications
+Datas: 28 00 9C 22 4C
+Descriptors:
+Client Characteristic Configuration: 00002902-0000-1000-8000-00805f9b34fb
+
+
+
++66.0488 +17.8968
+428m
