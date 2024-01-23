@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Inpu
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/standalone';
 import { FormsModule } from '@angular/forms';
 import { Geolocation, PositionOptions, WatchPositionCallback, Position } from '@capacitor/geolocation';
+import { BatteryInfo, Device } from '@capacitor/device';
 import * as blePeripheral from 'cordova-plugin-ble-peripheral/www/blePeripheral.js';
 
 const watchPositionOptions: PositionOptions = {
@@ -10,14 +11,33 @@ const watchPositionOptions: PositionOptions = {
   maximumAge: 0,
 }
 
-const SERVICE_UUID: string = "00001819-0000-1000-8000-00805f9b34fb";
+const SERVICE_UUID_BATTERY: string = "0000180f-0000-1000-8000-00805f9b34fb";
+const CHARACTERISTIC_UUID_BATTERY: string = "00002a19-0000-1000-8000-00805f9b34fb";
+
+const SERVICE_UUID_LN: string = "00001819-0000-1000-8000-00805f9b34fb";
 const CHARACTERISTIC_UUID_LN_FEATURE: string = "00002a6a-0000-1000-8000-00805f9b34fb";
 const CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic: string = "00002a67-0000-1000-8000-00805f9b34fb";
 const CHARACTERISTIC_UUID_NAVIGATION: string = "00002a68-0000-1000-8000-00805f9b34fb";
 
+const BatteryService = {
+  uuid: SERVICE_UUID_BATTERY,
+  characteristics: [
+      {
+          uuid: CHARACTERISTIC_UUID_BATTERY,
+          properties: blePeripheral.property.READ | blePeripheral.property.NOTIFY,
+          permissions: blePeripheral.permission.READABLE,
+          descriptors: [
+              {
+                  uuid: '2902',
+                  value: 'Battery Level'
+              }
+          ]
+      }
+  ]
+};
 
 const locationAndNAvigationService = {
-  uuid: SERVICE_UUID,
+  uuid: SERVICE_UUID_LN,
   characteristics: [
       {
           uuid: CHARACTERISTIC_UUID_LN_FEATURE,
@@ -30,7 +50,7 @@ const locationAndNAvigationService = {
           permissions: blePeripheral.permission.READABLE,
           descriptors: [
               {
-                  uuid: '2901',
+                  uuid: '2902',
                   value: 'Locationm and Speed Characteristic'
               }
           ]
@@ -41,7 +61,7 @@ const locationAndNAvigationService = {
         permissions: blePeripheral.permission.READABLE,
         descriptors: [
             {
-                uuid: '2901',
+                uuid: '2902',
                 value: 'Navigation'
             }
         ]
@@ -59,7 +79,11 @@ const locationAndNAvigationService = {
 })
 
 export class HomePage {
+
+  lastTimeBatteryPublished: number = 0;
+
   constructor() {
+    blePeripheral.createServiceFromJSON(BatteryService);
     blePeripheral.createServiceFromJSON(locationAndNAvigationService);
     blePeripheral.startAdvertising(locationAndNAvigationService.uuid, 'LN Feature');
   }
@@ -79,9 +103,21 @@ export class HomePage {
 
   watchPositionId: string|undefined = undefined;
 
-  parseNewLocation: WatchPositionCallback = (location: Position | null, err: any) => {
-    let ret = new Uint8Array(8);
-    blePeripheral.setCharacteristicValue(SERVICE_UUID, CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic, bytes);
+  parseNewLocation: WatchPositionCallback = async (location: Position | null, err: any) => {
+    let ret: DataView = new DataView((new Uint8Array(1)).fill(0).buffer);;
+    blePeripheral.setCharacteristicValue(SERVICE_UUID_LN, CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic, ret);
+
+    const nowdate : number = Date.now() + 5 * 60 * 1000;
+    if (nowdate > this.lastTimeBatteryPublished) {
+      this.lastTimeBatteryPublished = nowdate;
+      const bat: BatteryInfo = await Device.getBatteryInfo();
+      const batlevel: number|undefined = bat.batteryLevel;
+      if (batlevel !== undefined) {
+        const tmp: DataView = new DataView((new Uint8Array(1)).buffer);;
+        tmp.setUint8(0, Math.round(100 * batlevel));
+        blePeripheral.setCharacteristicValue(SERVICE_UUID_BATTERY, CHARACTERISTIC_UUID_BATTERY, tmp);
+      }
+    }
     console.log(location);
   }
 
