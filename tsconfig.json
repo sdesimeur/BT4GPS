@@ -19,13 +19,14 @@
     "target": "es2022",
     "module": "es2020",
     "lib": ["es2018", "dom"],
-    "allowjs": true, 
+    "allowJs": true,
     "useDefineForClassFields": false
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "strictTemplates": true,
+    "types" : ["node"]
   }
 }

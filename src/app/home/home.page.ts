@@ -3,7 +3,8 @@ import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/stan
 import { FormsModule } from '@angular/forms';
 import { Geolocation, PositionOptions, WatchPositionCallback, Position } from '@capacitor/geolocation';
 import { BatteryInfo, Device } from '@capacitor/device';
-import * as blePeripheral from 'cordova-plugin-ble-peripheral/www/blePeripheral.js';
+//import * as blePeripheral from 'cordova-plugin-ble-peripheral/www/blePeripheral.js';
+const blePeripheral = require('cordova-plugin-ble-peripheral/www/blePeripheral.js');
 
 const watchPositionOptions: PositionOptions = {
   enableHighAccuracy: true,
@@ -24,8 +25,8 @@ const BatteryService = {
   characteristics: [
       {
           uuid: CHARACTERISTIC_UUID_BATTERY,
-          properties: blePeripheral.property.READ | blePeripheral.property.NOTIFY,
-          permissions: blePeripheral.permission.READABLE,
+          properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+          permissions: blePeripheral.permissions.READABLE,
           descriptors: [
               {
                   uuid: '2902',
@@ -36,18 +37,18 @@ const BatteryService = {
   ]
 };
 
-const locationAndNAvigationService = {
+const locationAndNavigationService = {
   uuid: SERVICE_UUID_LN,
   characteristics: [
       {
           uuid: CHARACTERISTIC_UUID_LN_FEATURE,
-          properties: blePeripheral.property.READ,
-          permissions: blePeripheral.permission.READABLE | blePeripheral.property.NOTIFY
+          properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+          permissions: blePeripheral.permissions.READABLE
       },
       {
           uuid: CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic,
-          properties: blePeripheral.property.READ | blePeripheral.property.NOTIFY,
-          permissions: blePeripheral.permission.READABLE,
+          properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+          permissions: blePeripheral.permissions.READABLE,
           descriptors: [
               {
                   uuid: '2902',
@@ -57,8 +58,8 @@ const locationAndNAvigationService = {
       },
       {
         uuid: CHARACTERISTIC_UUID_NAVIGATION,
-        properties: blePeripheral.property.READ | blePeripheral.property.NOTIFY,
-        permissions: blePeripheral.permission.READABLE,
+        properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+        permissions: blePeripheral.permissions.READABLE,
         descriptors: [
             {
                 uuid: '2902',
@@ -84,8 +85,14 @@ export class HomePage {
 
   constructor() {
     blePeripheral.createServiceFromJSON(BatteryService);
-    blePeripheral.createServiceFromJSON(locationAndNAvigationService);
-    blePeripheral.startAdvertising(locationAndNAvigationService.uuid, 'LN Feature');
+    blePeripheral.createServiceFromJSON(locationAndNavigationService);
+    blePeripheral.startAdvertising(locationAndNavigationService.uuid, 'LN Feature').then(() => {
+      let ret: DataView = new DataView((new Uint8Array(4)).fill(0).buffer);
+      ret.setUint8(0, 0x5D);
+      const tmp = new Uint8Array(ret.buffer);
+      const tmp1 = tmp.buffer;
+      blePeripheral.setCharacteristicValue(SERVICE_UUID_LN, CHARACTERISTIC_UUID_LN_FEATURE, tmp1);
+    })
   }
 
   _checked : boolean = false;
@@ -104,8 +111,19 @@ export class HomePage {
   watchPositionId: string|undefined = undefined;
 
   parseNewLocation: WatchPositionCallback = async (location: Position | null, err: any) => {
-    let ret: DataView = new DataView((new Uint8Array(1)).fill(0).buffer);;
-    blePeripheral.setCharacteristicValue(SERVICE_UUID_LN, CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic, ret);
+    let ret: DataView = new DataView((new Uint8Array(20)).fill(0).buffer);
+    ret.setUint16(0, 0x10DD, true);
+    if (location !== null) {
+      if (location.coords.speed !== null) ret.setUint16(2, Math.round(location.coords.speed), true);
+      if (location.coords.latitude !== null) ret.setInt32(4, Math.round(location.coords.latitude * 10000000), true);
+      if (location.coords.longitude !== null) ret.setInt32(8, Math.round(location.coords.longitude * 10000000), true);
+      if (location.coords.altitude !== null) ret.setInt16(12, Math.round(location.coords.altitude), true);
+      if (location.coords.altitude !== null) ret.setInt16(12, Math.round(100 * location.coords.altitude), true);
+      ret.setUint32(16, Math.round(Date.now() / 1000), true);
+      const tmp = new Uint8Array(ret.buffer);
+      const tmp1 = tmp.buffer;
+      blePeripheral.setCharacteristicValue(SERVICE_UUID_LN, CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic, tmp1);
+    }
 
     const nowdate : number = Date.now() + 5 * 60 * 1000;
     if (nowdate > this.lastTimeBatteryPublished) {
@@ -113,9 +131,11 @@ export class HomePage {
       const bat: BatteryInfo = await Device.getBatteryInfo();
       const batlevel: number|undefined = bat.batteryLevel;
       if (batlevel !== undefined) {
-        const tmp: DataView = new DataView((new Uint8Array(1)).buffer);;
-        tmp.setUint8(0, Math.round(100 * batlevel));
-        blePeripheral.setCharacteristicValue(SERVICE_UUID_BATTERY, CHARACTERISTIC_UUID_BATTERY, tmp);
+        const ret: DataView = new DataView((new Uint8Array(1)).buffer);;
+        ret.setUint8(0, Math.round(100 * batlevel));
+        const tmp = new Uint8Array(ret.buffer);
+        const tmp1 = tmp.buffer;
+        blePeripheral.setCharacteristicValue(SERVICE_UUID_BATTERY, CHARACTERISTIC_UUID_BATTERY, tmp1);
       }
     }
     console.log(location);
@@ -133,16 +153,18 @@ export class HomePage {
   }
 
 
-  bytesToString(buffer: ArrayBuffer): string {
-    return String.fromCharCode.apply(null, new Uint8Array(buffer));
+  bytesToString(dataView: DataView): string {
+    const tmp =  dataView.buffer;
+    const tmp1 = [...new Uint8Array(tmp)];
+    return String.fromCharCode.apply(null, tmp1);
   }
 
 // only works for ASCII characters
-  stringToBytes(string: string): ArrayBuffer {
+  stringToBytes(string: string): DataView {
     var array = new Uint8Array(string.length);
     for (var i = 0, l = string.length; i < l; i++) {
         array[i] = string.charCodeAt(i);
     }
-    return array.buffer;
+    return new DataView(array.buffer);
   }
 }
