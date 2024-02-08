@@ -43,7 +43,13 @@ const locationAndNavigationService = {
       {
           uuid: CHARACTERISTIC_UUID_LN_FEATURE,
           properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
-          permissions: blePeripheral.permissions.READABLE
+          permissions: blePeripheral.permissions.READABLE,
+          descriptors: [
+              {
+                  uuid: '2902',
+                  value: 'LN Feature Characteristic'
+              }
+          ]
       },
       {
           uuid: CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic,
@@ -52,7 +58,7 @@ const locationAndNavigationService = {
           descriptors: [
               {
                   uuid: '2902',
-                  value: 'Locationm and Speed Characteristic'
+                  value: 'Location and Speed Characteristic'
               }
           ]
       },
@@ -119,9 +125,10 @@ export class HomePage {
       if (location.coords.longitude !== null) ret.setInt32(8, Math.round(location.coords.longitude * 10000000), true);
       if (location.coords.altitude !== null) ret.setInt16(12, Math.round(location.coords.altitude), true);
       if (location.coords.altitude !== null) ret.setInt16(12, Math.round(100 * location.coords.altitude), true);
-      ret.setUint32(16, Math.round(Date.now() / 1000), true);
+      ret.setUint32(16, Math.round(location.timestamp / 1000), true);
       const tmp = new Uint8Array(ret.buffer);
       const tmp1 = tmp.buffer;
+      console.log(tmp1);
       blePeripheral.setCharacteristicValue(SERVICE_UUID_LN, CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic, tmp1);
     }
 
