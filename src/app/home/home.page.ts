@@ -25,8 +25,8 @@ const BatteryService = {
   characteristics: [
       {
           uuid: CHARACTERISTIC_UUID_BATTERY,
-          properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
-          permissions: blePeripheral.permissions.READABLE,
+          properties: blePeripheral.properties.WRITE | blePeripheral.properties.READ | blePeripheral.properties.NOTIFY | blePeripheral.properties.INDICATE,
+          permissions: blePeripheral.permissions.READABLE | blePeripheral.WRITEABLE,
           descriptors: [
               {
                   uuid: '2902',
@@ -42,7 +42,8 @@ const locationAndNavigationService = {
   characteristics: [
       {
           uuid: CHARACTERISTIC_UUID_LN_FEATURE,
-          properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+          properties: blePeripheral.properties.READ,
+          //properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
           permissions: blePeripheral.permissions.READABLE,
           descriptors: [
               {
@@ -53,7 +54,8 @@ const locationAndNavigationService = {
       },
       {
           uuid: CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic,
-          properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+          properties: blePeripheral.properties.NOTIFY,
+          //properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
           permissions: blePeripheral.permissions.READABLE,
           descriptors: [
               {
@@ -64,7 +66,8 @@ const locationAndNavigationService = {
       },
       {
         uuid: CHARACTERISTIC_UUID_NAVIGATION,
-        properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+        properties: blePeripheral.properties.NOTIFY,
+        //properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
         permissions: blePeripheral.permissions.READABLE,
         descriptors: [
             {
@@ -92,6 +95,7 @@ export class HomePage {
   constructor() {
     blePeripheral.createServiceFromJSON(BatteryService);
     blePeripheral.createServiceFromJSON(locationAndNavigationService);
+    //blePeripheral.startAdvertising(BatteryService.uuid, 'Battery Level');
     blePeripheral.startAdvertising(locationAndNavigationService.uuid, 'LN Feature').then(() => {
       let ret: DataView = new DataView((new Uint8Array(4)).fill(0).buffer);
       ret.setUint8(0, 0x5D);
