@@ -121,15 +121,15 @@ export class HomePage {
   watchPositionId: string|undefined = undefined;
 
   parseNewLocation: WatchPositionCallback = async (location: Position | null, err: any) => {
-    let ret: DataView = new DataView((new Uint8Array(20)).fill(0).buffer);
+    let ret: DataView = new DataView((new Uint8Array(21)).fill(0).buffer);
     ret.setUint16(0, 0x10DD, true);
     if (location !== null) {
-      if (location.coords.speed !== null) ret.setUint16(2, Math.round(location.coords.speed), true);
+      if (location.coords.speed !== null) ret.setUint16(2, Math.round(100 * location.coords.speed), true); // v*100 v in m/s
       if (location.coords.latitude !== null) ret.setInt32(4, Math.round(location.coords.latitude * 10000000), true);
       if (location.coords.longitude !== null) ret.setInt32(8, Math.round(location.coords.longitude * 10000000), true);
-      if (location.coords.altitude !== null) ret.setInt16(12, Math.round(location.coords.altitude), true);
-      if (location.coords.altitude !== null) ret.setInt16(12, Math.round(100 * location.coords.altitude), true);
-      ret.setUint32(16, Math.round(location.timestamp / 1000), true);
+      if (location.coords.altitude !== null) ret.setInt32(12, Math.round(100 * location.coords.altitude), true);
+      if (location.coords.heading !== null) ret.setUint16(15, Math.round(100 * ((location.coords.heading + 360) % 360)), true);
+      ret.setUint32(17, Math.round(location.timestamp / 1000), true);
       const tmp = new Uint8Array(ret.buffer);
       const tmp1 = tmp.buffer;
       console.log(tmp1);

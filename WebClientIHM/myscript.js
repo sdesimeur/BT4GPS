@@ -48,5 +48,5 @@ function handleDisconnected (r) {
 
 function handleNotifications(event) {
   let value = event.target.value;
-  log('> ' + value.getInt32(4, true));
+  log(value);
 }
