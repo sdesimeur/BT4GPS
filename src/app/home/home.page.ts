@@ -3,8 +3,9 @@ import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/stan
 import { FormsModule } from '@angular/forms';
 //import { Geolocation, PositionOptions, WatchPositionCallback, Position, PermissionStatus, GeolocationPluginPermissions} from '@capacitor/geolocation';
 import { BatteryInfo, Device } from '@capacitor/device';
-import { ForegroundService } from '@awesome-cordova-plugins/foreground-service/ngx';
+//import { ForegroundService } from '@awesome-cordova-plugins/foreground-service/ngx';
 //import * as blePeripheral from 'cordova-plugin-ble-peripheral/www/blePeripheral.js';
+import { BleClient } from '@capacitor-community/bluetooth-le';
 import {registerPlugin} from "@capacitor/core";
 import {BackgroundGeolocationPlugin} from "@capacitor-community/background-geolocation";
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -90,7 +91,7 @@ const locationAndNavigationService = {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IonHeader, IonToolbar, IonTitle, IonContent, FormsModule],
-  providers: [ForegroundService],
+  //providers: [ForegroundService],
 })
 
 export class HomePage implements OnInit, AfterContentInit, OnDestroy {
@@ -101,7 +102,7 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
   constructor(
     private zone:NgZone,
     public ref: ChangeDetectorRef,
-    public foregroundService?: ForegroundService,
+    //public foregroundService?: ForegroundService,
   ) {
   }
 
@@ -135,20 +136,24 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
 
 
   stopForegroundService() {
+    /*
     try {
       this.foregroundService?.stop();
     } catch (e) {}
     this.foregroundServiceStarted = false;
+    */
   }
 
   async startForegroundService(){
-      if (!this.foregroundServiceStarted && (await Device.getInfo()).platform !== 'ios') {
-        this.stopForegroundService();
-        setTimeout(() => {
-          this.foregroundServiceStarted = true;
-          this.foregroundService?.start('BT4GPS Running', 'Background Service', 'drawable/ic_notification', 1, 535244535244);
-        }, 10000)
-      }
+    /*  
+    if (!this.foregroundServiceStarted && (await Device.getInfo()).platform !== 'ios') {
+      this.stopForegroundService();
+      setTimeout(() => {
+        this.foregroundServiceStarted = true;
+        this.foregroundService?.start('BT4GPS Running', 'Background Service', 'drawable/ic_notification', 1, 535244535244);
+      }, 10000)
+    }
+    */
   }
 
   ngOnDestroy () {
@@ -163,6 +168,10 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
   }
   
   async afterContentInitHandle () {
+    try {
+      await BleClient.initialize({ androidNeverForLocation: true });
+      await BleClient.startEnabledNotifications(this.onBluetoothStateChange.bind(this));
+    } catch (e) {console.error(e);}
     /*
     let resultGeolocation: PermissionStatus;
     try {
@@ -181,12 +190,16 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
 
     } catch (e) {}
     */
+    //blePeripheral.bluetoothStateChange = this.onBluetoothStateChange.bind(this);
     try {
-      await blePeripheral.onBluetoothStateChange(this.onBluetoothStateChange.bind(this));
+      const state = await BleClient.isEnabled();
+      if (state) this.isBluetoothServicesStarted = true;
     } catch (e) {console.error(e);}
+    /*
     try {
-      this.isBluetoothServicesStarted = true;
+      await blePeripheral.onBluetoothStateChange(this.onBluetoothStateChange);
     } catch (e) {console.error(e);}
+    */
     try {
       this.startForegroundService();
     } catch (e) {console.error(e);}
@@ -326,7 +339,8 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
     //this.watchPositionId = await Geolocation.watchPosition(watchPositionOptions, this.parseNewLocation.bind(this));
   }
   
-  async onBluetoothStateChange (state: any) {
+  async onBluetoothStateChange (state: boolean) {
+    state = await BleClient.isEnabled();
     if (!state) this.isBluetoothServicesStarted = false;
   }
 
