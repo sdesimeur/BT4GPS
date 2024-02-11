@@ -16,11 +16,26 @@
   </ion-header>
 -->
   <div id="container">
-	  Share my location via Bluetooth LE<br><br>
+    <div>
+	    Share my location via Bluetooth LE<br><br>
+    </div>
+    <div> &nbsp;</div>
+    <div>
+    Watching GPS started:
     <label class="switch">
-	    <input type="checkbox" [(ngModel)]="isChecked">
+	    <input type="checkbox" [checked]="isWatchGpsStarted" [(ngModel)]="isWatchGpsStarted">
       <span class="slider round"></span>
     </label>
+    </div>
+    <div> &nbsp;</div>
+    <div>
+        Bluetooth services started:
+    	<label class="switch">
+	    <input type="checkbox" [checked]="isBluetoothServicesStarted" [(ngModel)]="isBluetoothServicesStarted">
+      <span class="slider round"></span>
+    </label>
+    </div>
+
   </div>
 <!--
 	</ion-content>
