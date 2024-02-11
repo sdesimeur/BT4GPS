@@ -47,6 +47,13 @@ function handleDisconnected (r) {
 }
 
 function handleNotifications(event) {
-  let value = event.target.value;
-  log(value);
+  const value = event.target.value;
+	console.log(value);
+  var mygps = new gpsbtle(value);
+  console.log("Speed: " + mygps.getXXX('SPEED'));
+  console.log("Altitude: " + mygps.getXXX('ELEVATION'));
+  console.log("Latitude: " + mygps.getXXX('LATITUDE'));
+  console.log("Longitude: " + mygps.getXXX('LONGITUDE'));
+  console.log("Heading: " + mygps.getXXX('HEADING'));
+  console.log("Time: " + mygps.getXXX('UTC_TIME'));
 }
