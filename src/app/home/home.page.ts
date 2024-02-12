@@ -161,15 +161,21 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
   }
 
   ngOnInit() {
+    this.ngOnInitHandle();
   }
 
   ngAfterContentInit () {
     this.afterContentInitHandle();
   }
   
+
+  async ngOnInitHandle () {
+  }
+
   async afterContentInitHandle () {
     try {
       await BleClient.initialize({ androidNeverForLocation: true });
+      this.bluetoothEnable = await BleClient.isEnabled();
       await BleClient.startEnabledNotifications(this.onBluetoothStateChange.bind(this));
     } catch (e) {console.error(e);}
     /*
@@ -191,10 +197,7 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
     } catch (e) {}
     */
     //blePeripheral.bluetoothStateChange = this.onBluetoothStateChange.bind(this);
-    try {
-      const state = await BleClient.isEnabled();
-      if (state) this.isBluetoothServicesStarted = true;
-    } catch (e) {console.error(e);}
+    if (this.bluetoothEnable) this.isBluetoothServicesStarted = true;
     /*
     try {
       await blePeripheral.onBluetoothStateChange(this.onBluetoothStateChange);
@@ -203,6 +206,22 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
     try {
       this.startForegroundService();
     } catch (e) {console.error(e);}
+  }
+
+  private _bluetoothEnable: boolean = false;
+  public set bluetoothEnable (a: boolean) {
+    if (a !== this._bluetoothEnable) {
+      if (a) {
+        BleClient.enable();
+      } else {
+        BleClient.disable();
+      }
+    }
+    this._bluetoothEnable = a;
+  }
+  public get bluetoothEnable (): boolean {
+    return this._bluetoothEnable;
+
   }
 
   private _isBluetoothServicesStarted: boolean = false;
@@ -329,7 +348,7 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
 
         // The minimum number of metres between subsequent locations. Defaults
         // to 0.
-        distanceFilter: 50
+        distanceFilter: 10
     }, this.parseNewLocation.bind(this))
     .then((watcher_id) => {
 	    this.watchPositionId = watcher_id;

@@ -21,19 +21,28 @@
     </div>
     <div> &nbsp;</div>
     <div>
-    Watching GPS started:
-    <label class="switch">
-	    <input type="checkbox" [checked]="isWatchGpsStarted" [(ngModel)]="isWatchGpsStarted">
-      <span class="slider round"></span>
-    </label>
+      Bluetooth enabled:
+      <label class="switch">
+        <input type="checkbox" [checked]="bluetoothEnable" [(ngModel)]="bluetoothEnable">
+        <span class="slider round"></span>
+      </label>
     </div>
     <div> &nbsp;</div>
+      
     <div>
         Bluetooth services started:
     	<label class="switch">
 	    <input type="checkbox" [checked]="isBluetoothServicesStarted" [(ngModel)]="isBluetoothServicesStarted">
       <span class="slider round"></span>
     </label>
+    </div>
+    <div> &nbsp;</div>
+    <div>
+      Watching GPS started:
+      <label class="switch">
+        <input type="checkbox" [checked]="isWatchGpsStarted" [(ngModel)]="isWatchGpsStarted">
+        <span class="slider round"></span>
+      </label>
     </div>
     <!--<div> &nbsp;</div>
     <div (click)="registerBluetoothStateChangeCallback()">
