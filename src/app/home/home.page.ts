@@ -6,6 +6,7 @@ import { BatteryInfo, Device } from '@capacitor/device';
 //import { ForegroundService } from '@awesome-cordova-plugins/foreground-service/ngx';
 //import * as blePeripheral from 'cordova-plugin-ble-peripheral/www/blePeripheral.js';
 import { BleClient } from '@capacitor-community/bluetooth-le';
+import { App } from '@capacitor/app';
 import {registerPlugin} from "@capacitor/core";
 import {BackgroundGeolocationPlugin} from "@capacitor-community/background-geolocation";
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -24,6 +25,7 @@ const SERVICE_UUID_LN: string = "00001819-0000-1000-8000-00805f9b34fb";
 const CHARACTERISTIC_UUID_LN_FEATURE: string = "00002a6a-0000-1000-8000-00805f9b34fb";
 const CHARACTERISTIC_UUID_LocationAndSpeedCharacteristic: string = "00002a67-0000-1000-8000-00805f9b34fb";
 const CHARACTERISTIC_UUID_NAVIGATION: string = "00002a68-0000-1000-8000-00805f9b34fb";
+const CHARACTERISTIC_UUID_WAKEUP: string = "00002aff-0000-1000-8000-00805f9b34fb";
 
 const BatteryService = {
   uuid: SERVICE_UUID_BATTERY,
@@ -81,6 +83,19 @@ const locationAndNavigationService = {
             }
         ]
     },
+    {
+        uuid: CHARACTERISTIC_UUID_WAKEUP,
+        properties: blePeripheral.properties.WRITE_NO_RESPONSE,
+        //properties: blePeripheral.properties.READ | blePeripheral.properties.NOTIFY,
+        permissions: blePeripheral.permissions.WRITEABLE,
+        descriptors: [
+            {
+                uuid: '2901',
+                value: 'WakeUp'
+            }
+        ]
+    },
+      
   ]
 };
 
@@ -119,12 +134,12 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
       await blePeripheral.startAdvertising(locationAndNavigationService.uuid, 'LN Feature');
     } catch (e) {console.error(e);}
     try {
-      await this.readBatteryLevel();
+      await this.writeBatteryLevel();
     } catch (e) {console.error(e);}
   }
 
 
-  async readBatteryLevel () {
+  async writeBatteryLevel () {
     let ret: DataView = new DataView((new Uint8Array(4)).fill(0).buffer);
     ret.setUint8(0, 0x5D);
     const tmp = new Uint8Array(ret.buffer);
@@ -156,6 +171,11 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
     */
   }
 
+
+  quitAppl () {
+    App.exitApp();
+  }
+
   ngOnDestroy () {
       this.deactivateLocation();
   }
@@ -176,6 +196,7 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
     try {
       await BleClient.initialize({ androidNeverForLocation: true });
       this.bluetoothEnable = await BleClient.isEnabled();
+      await blePeripheral.onWriteRequest(this.didReceiveWriteRequest.bind(this));
       await BleClient.startEnabledNotifications(this.onBluetoothStateChange.bind(this));
     } catch (e) {console.error(e);}
     /*
@@ -250,6 +271,9 @@ export class HomePage implements OnInit, AfterContentInit, OnDestroy {
 	  return this._isWatchGpsStarted;
   }
 
+  didReceiveWriteRequest (req: any) {
+    console.log(req);
+  }
 
   async parseNewLocation (location: any | undefined, err: any) {
     if (!this.isBluetoothServicesStarted) return; 

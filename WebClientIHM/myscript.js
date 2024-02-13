@@ -1,9 +1,8 @@
-var myCharacteristic;
 var myDevice = undefined;
-var myServer;
-var myService;
+var characteristicW = undefined;
 
 var deviceConnected = false;
+var wakeUpIntervalId = undefined;
 
 const log = console.log;
 
@@ -40,43 +39,59 @@ async function connectToDevice (t) {
 }
 
 
-function connectToDeviceHandle() {
+async function connectToDeviceHandle() {
   myDevice.ongattserverdisconnected = handleDisconnected;
   log('Connecting to GATT Server...');
-  myDevice.gatt.connect().then(server => {
+  var server = undefined;
+  try {
+    server = await myDevice.gatt.connect();
     deviceConnected = true;
+  } catch (e) { console.log(e)}
+
+  if (!deviceConnected) return;
+
+  try {
     setCookie("registeredDevice", myDevice.name, 365);
-    myServer = server;
+
     log('Getting Battery Service...');
-    return myServer.getPrimaryService('00001819-0000-1000-8000-00805f9b34fb');
-  })
-  .then(service => {
-    myService = service;
+    var service = await server.getPrimaryService('00001819-0000-1000-8000-00805f9b34fb');
     log('Getting Location and Speed Characteristic Characteristic...');
-    return myService.getCharacteristic('00002a67-0000-1000-8000-00805f9b34fb');
-  })
-  .then(async characteristic => {
+    var characteristic = await service.getCharacteristic('00002a67-0000-1000-8000-00805f9b34fb');
     log('Reading Battery Level...');
-    myCharacteristic = characteristic;
-    myCharacteristic.oncharacteristicvaluechanged =  handleNotifications;
-    try {
-      let data = await myCharacteristic.startNotifications();
-    } catch (e) {
-      console.error(e)
-      myDevice.handleDisconnected();
+    characteristic.oncharacteristicvaluechanged =  handleNotifications;
+    await characteristic.startNotifications();
+  } catch (e) {
+    console.error(e)
+    myDevice.handleDisconnected();
+    return;
+  }
+
+  try {
+    characteristicW = await service.getCharacteristic('00002aff-0000-1000-8000-00805f9b34fb');
+    if (wakeUpIntervalId !== undefined) {
+      clearInterval(wakeUpIntervalId);
     }
-    //myCharacteristic.startNotifications().then(_ => {
-    //  log('> Notifications started');
-    //})
-    //.catch(error => { console.error(error); });
-  })
-  .catch(error => {
-    deviceConnected = false;
-    console.error(error);
-  });
+    wakeUpIntervalId = setInterval(
+      async () => {
+        try {
+          const a = new DataView(new Uint8Array(1).fill(0x00).buffer);
+          await characteristicW.writeValue(a);
+        } catch (e) {
+          console.log(e)
+        }
+      }, 30000
+    );
+  } catch (e) {
+    console.error(e)
+  }
+  
 }
 
 function handleDisconnected (r) {
+  if (wakeUpIntervalId !== undefined) {
+    clearInterval(wakeUpIntervalId);
+    wakeUpIntervalId = undefined;
+  }
   deviceConnected = false;
   console.log(r);
 }
